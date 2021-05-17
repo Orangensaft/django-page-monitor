@@ -2,6 +2,7 @@ import difflib
 from typing import Optional
 from bs4 import BeautifulSoup
 import requests
+from django.conf import settings
 from django.db import models
 
 # Create your models here.
@@ -53,6 +54,19 @@ class MonitoredPage(models.Model):
             # change
             PageDiff(page=self, previous=latest, content=content, diff=create_diff(latest, content)).save()
             return True
+
+    def notify(self):
+        payload = {                       # Set POST fields here
+            "t" : "URL content changed!",
+            "m" : f"Content of {self.title} changed!",
+            "c" : "#FF0000",
+            "d" : "a",
+            "u" : self.url,
+            "ut" : self.title,
+            "k" : settings.PUSHSAFER_KEY
+        }
+        url = "https://www.pushsafer.com/api"
+        return requests.post(url,data=payload).json()
 
 
 class PageDiff(models.Model):

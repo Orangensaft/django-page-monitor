@@ -11,7 +11,7 @@ class Command(BaseCommand):
             if ret:
                 changed+=1
                 print(f"{page.title} has changed!")
-                #todo: add notification here
+                page.page.notify()
             else:
                 print(f"{page.title} unchanged.")
         print(f"Done checking all pages. Changes: {changed}")
