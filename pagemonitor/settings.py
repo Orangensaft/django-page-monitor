@@ -27,7 +27,7 @@ PUSHSAFER_KEY = env("DJ_MONITOR_PUSHSAFER")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [env("DJ_ALLOWED_HOSTS","127.0.0.1"),]
 
 
 # Application definition

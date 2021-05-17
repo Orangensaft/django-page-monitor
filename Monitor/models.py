@@ -14,6 +14,7 @@ class MonitoredPage(models.Model):
     url = models.URLField(verbose_name="URL to monitor")
     raw = models.BooleanField(default=False,verbose_name="Raw content check?", help_text="If checked, will compare unparsed content of url")
     last_check = models.DateTimeField(blank=True, default=None, null=True)
+    to_notify = models.ManyToManyField("NotificationDevice", blank=True)
 
     def __str__(self):
         return f"{self.title} ({self.url})"
@@ -56,17 +57,8 @@ class MonitoredPage(models.Model):
             return True
 
     def notify(self):
-        payload = {                       # Set POST fields here
-            "t" : "URL content changed!",
-            "m" : f"Content of {self.title} changed!",
-            "c" : "#FF0000",
-            "d" : "a",
-            "u" : self.url,
-            "ut" : self.title,
-            "k" : settings.PUSHSAFER_KEY
-        }
-        url = "https://www.pushsafer.com/api"
-        return requests.post(url,data=payload).json()
+        for device in self.to_notify.all():
+            device.notify(self.title, self.url)
 
 
 class PageDiff(models.Model):
@@ -89,6 +81,26 @@ class PageDiff(models.Model):
         else:
             return diffs.get()
 
+
+class NotificationDevice(models.Model):
+    name = models.CharField(max_length=64)
+    device_id = models.CharField(max_length=64)
+
+    def notify(self, title, url):
+        payload = {  # Set POST fields here
+            "t": "URL content changed!",
+            "m": f"Content of {title} changed!",
+            "c": "#FF0000",
+            "d": self.device_id,
+            "u": url,
+            "ut": title,
+            "k": settings.PUSHSAFER_KEY
+        }
+        url = "https://www.pushsafer.com/api"
+        return requests.post(url, data=payload).json()
+
+    def __str__(self):
+        return f"{self.name}"
 
 def create_diff(old: Optional[PageDiff], new: str) -> str:
     old_content = old.content if old is not None else ""
